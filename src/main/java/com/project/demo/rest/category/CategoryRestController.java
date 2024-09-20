@@ -15,6 +15,7 @@ public class CategoryRestController {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN_ROLE', 'USER')")
     @GetMapping
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
