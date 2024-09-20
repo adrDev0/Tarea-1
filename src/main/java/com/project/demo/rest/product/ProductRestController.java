@@ -24,27 +24,23 @@ public class ProductRestController {
     private CategoryRepository categoryRepository;
 
     @GetMapping()
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN_ROLE', 'USER')")
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
-    @PostMapping("/create")
+    @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN_ROLE')")
-    public ResponseEntity<?> createProduct(@RequestBody ProductRequest productRequest) {
-        Optional<Category> optionalCategory = categoryRepository.findById(productRequest.getCategoryId());
-        if (optionalCategory.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Category not found");
+    public ResponseEntity<?> createProduct(@RequestBody Product product) {
+        if (product.getCategory() != null && product.getCategory().getId() != null) {
+            Category category = categoryRepository.findById(product.getCategory().getId())
+                    .orElseThrow(() -> new RuntimeException("Categoria no encontrada"));
+            product.setCategory(category);
+        } else {
+            return ResponseEntity.badRequest().body("Categoria es requerida");
         }
-
-        Product product = new Product();
-        product.setName(productRequest.getName());
-        product.setDescripcion(productRequest.getDescripcion());
-        product.setPrice(productRequest.getPrice());
-        product.setStock(productRequest.getStock());
-        product.setCategory(optionalCategory.get());
-
-        Product savedProduct = productRepository.save(product);
-        return ResponseEntity.ok(savedProduct);
+        productRepository.save(product);
+        return ResponseEntity.ok(product);
     }
 
     @GetMapping("/{id}")
